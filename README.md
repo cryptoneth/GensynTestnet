@@ -1,0 +1,2 @@
+# GensynTestnet
+GensynTestnet Swarm
