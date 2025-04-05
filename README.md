@@ -61,13 +61,10 @@ Done
 ===========================================================================
 
 
-1. **Install `sudo`**
+1. **Install `sudo` and other dependencies**
  ```bash
- apt update && apt install -y sudo
- ```
- 2. **Install other dependencies**
- ```bash
- sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl wget screen git && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - && echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list && sudo apt update && sudo apt install -y yarn
+ apt update && apt install -y sudo 
+sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl wget screen git && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - && echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list && sudo apt update && sudo apt install -y yarn
  ```
 
  **3. Install Python**
@@ -76,16 +73,11 @@ Done
  ```
  
  **4. Install Node**
- ```
+
+ ```bash
  sudo apt-get update
- ```
- ```
  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
- ```
- ```
  sudo apt-get install -y nodejs
- ```
- ```
  node -v
  ```
  ```bash
@@ -112,9 +104,16 @@ Done
  ## 4) Run the swarm
  Open a screen to run it in background
  ```bash
- screen -S swarm
+ screen -S gensyn
  ```
  Install swarm
+
+ ```bash
+ git clone https://github.com/cryptoneth/GensynTestnet
+ ```
+ ```bash
+ mv GensynTestnet/run_rl_swarm.sh rl-swarm/run_rl_swarm.sh
+ ```
 
  ```
  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
@@ -130,17 +129,10 @@ Done
 
 ## 5) Login
 
- Press `Crtl + A + D` to exit the screen
- ---
+go to ngrok
+Get the token from: https://dashboard.ngrok.com/get-started/your-authtoken
 
-```
-wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz && tar -xvzf ngrok-v3-stable-linux-amd64.tgz && sudo mv ngrok /usr/local/bin/
-```
-
-Get the token from: https://dashboard.ngrok.com/get-started/your-authtoken.
-
-Paste the token into the VPS and also paste this into the VPS:
-``` ngrok http 3000 ```
+paste your AuthToken
 
 Then Open Link And Connect To Gensyn Testnet with you Email
 
