@@ -133,7 +133,15 @@ Get the token from: https://dashboard.ngrok.com/get-started/your-authtoken
 
 paste your AuthToken
 
-Then Open Link And Connect To Gensyn Testnet with you Email
+Then Open Link And Connect To Gensyn Testnet with your Email
+
+Then Paste Your Hugging Face Token
+
+Every Things Fine Right Now 
+
+Just Copy Your Node Name And Wait For Correct Log
+
+Press Crtl + A + D
 
 ## 6) Backup
  **1- Node name**
