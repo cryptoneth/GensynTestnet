@@ -94,16 +94,10 @@ sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl wge
 
  ```bash
  git clone https://github.com/gensyn-ai/rl-swarm/
+ git clone https://github.com/cryptoneth/GensynTestnet
+ mv GensynTestnet/run_rl_swarm.sh rl-swarm/run_rl_swarm.sh
  cd rl-swarm
  ```
-
- ```bash
- git clone https://github.com/cryptoneth/GensynTestnet
- ```
- ```bash
- mv GensynTestnet/run_rl_swarm.sh rl-swarm/run_rl_swarm.sh
- ```
- 
 
  ## 4) Run the swarm
  Open a screen to run it in background
