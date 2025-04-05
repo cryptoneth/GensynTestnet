@@ -89,9 +89,6 @@ Done
  node -v
  ```
  ```bash
- sudo npm install -g yarn
- ```
- ```bash
  yarn -v
  ```
  
