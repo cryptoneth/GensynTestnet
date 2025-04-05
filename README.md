@@ -96,15 +96,6 @@ sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl wge
  git clone https://github.com/gensyn-ai/rl-swarm/
  cd rl-swarm
  ```
- 
- ---
- 
- ## 4) Run the swarm
- Open a screen to run it in background
- ```bash
- screen -S gensyn
- ```
- Install swarm
 
  ```bash
  git clone https://github.com/cryptoneth/GensynTestnet
@@ -112,6 +103,14 @@ sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl wge
  ```bash
  mv GensynTestnet/run_rl_swarm.sh rl-swarm/run_rl_swarm.sh
  ```
+ 
+
+ ## 4) Run the swarm
+ Open a screen to run it in background
+ ```bash
+ screen -S gensyn
+ ```
+ Install swarm
 
  ```
  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
