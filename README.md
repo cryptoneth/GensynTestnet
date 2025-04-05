@@ -48,16 +48,18 @@ ssh-keygen -t rsa
 
 4 - copy your public key ( SSH )
 
+Replace Your Address
 ```bash
-Get-Content C:\Users\crypton/.ssh/id_rsa.pub | Set-Clipboard
+Get-Content C:\Users\.../.ssh/id_rsa.pub | Set-Clipboard
 ```
 
 5 - go back to the website and define ssh key for your servers
 
 6 - get your private key on your windows powershell 
 
+Replace Your Address
 ```bash
-Get-Content C:\Users\crypton/.ssh/id_rsa | Set-Clipboard 
+Get-Content C:\Users\.../.ssh/id_rsa | Set-Clipboard 
 ```
 
 7 - go to termius and set a keychain with your private and public key
