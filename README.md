@@ -91,17 +91,7 @@ Done
  ```bash
  yarn -v
  ```
- 
- **5. Install Yarn**
- ```bash
- curl -o- -L https://yarnpkg.com/install.sh | bash
- ```
- ```bash
- export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
- ```
- ```bash
- source ~/.bashrc
- ```
+
 
  ## Get HuggingFace Access token
  **1- Create account in [HuggingFace](https://huggingface.co/)**
