@@ -111,9 +111,7 @@ sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl wge
  ```
 
  ```bash
- python3 -m venv .venv
- source .venv/bin/activate
- ./run_rl_swarm.sh
+python3 -m venv .venv && . .venv/bin/activate &&  chmod +x ./run_rl_swarm.sh && ./run_rl_swarm.sh
  ```
  Press `Y`
  ---
