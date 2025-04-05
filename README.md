@@ -38,19 +38,27 @@ Note: You can run the node without a GPU using CPU-only mode.
 
 1 - open powershell on windows
 
-2 - ```ssh-keygen -t rsa```
+2 -  
+
+```bash
+ssh-keygen -t rsa 
+```
 
 3 - press enter to save the file 
 
 4 - copy your public key ( SSH )
 
-```Get-Content C:\Users\crypton/.ssh/id_rsa.pub | Set-Clipboard```
+```bash
+Get-Content C:\Users\crypton/.ssh/id_rsa.pub | Set-Clipboard
+```
 
 5 - go back to the website and define ssh key for your servers
 
 6 - get your private key on your windows powershell 
 
-``` Get-Content C:\Users\crypton/.ssh/id_rsa | Set-Clipboard ```
+```bash
+Get-Content C:\Users\crypton/.ssh/id_rsa | Set-Clipboard 
+```
 
 7 - go to termius and set a keychain with your private and public key
 
