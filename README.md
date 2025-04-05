@@ -173,6 +173,14 @@ Then Open Link And Connect To Gensyn Testnet with you Email
  * Return: `screen -r swarm`
  * Stop and Kill: `screen -XS swarm quit`
 
+---
+
+Track Your Node With this Bot on Tg
+
+@gensyntrackbot
+
+Example : /check QmZPwBPynMxz56tTaj25QFXdo2YFHA....
+
 Done, Welcome To Swarm
 ![1500x500 (1)](https://github.com/user-attachments/assets/ef2be4d2-f1a5-4592-8173-05aadd91cdab)
 
