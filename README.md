@@ -149,8 +149,8 @@ Press Crtl + A + D
  
  ![image](https://github.com/user-attachments/assets/a1abdb1a-aa11-407f-8e5b-abe7d0a6b0f3)
  
- **2- Node `.pem` file**
- * Save `swarm.pem` file in this directory: `/root/rl-swarm/`
+ **2-  Save `swarm.pem` file in this directory: `/root/rl-swarm/`
+
  
  ---
  
