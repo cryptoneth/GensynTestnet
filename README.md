@@ -151,6 +151,17 @@ Press Crtl + A + D
  
  **2-  Save `swarm.pem` file in this directory: `/root/rl-swarm/`
 
+and make sure to back up these 
+
+
+```bash
+cd
+nano rl-swarm/modal-login/temp-data/userData.json
+```
+```bash
+cd
+nano rl-swarm/modal-login/temp-data/userApiKey.json
+```
  
  ---
  
