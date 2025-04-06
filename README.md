@@ -147,8 +147,6 @@ Press Crtl + A + D
  **1- Node name**
  * Now your node started running, Find your name after word `Hello`, like mine is `whistling hulking armadillo` as in the image below (You can use `CTRL+SHIFT+F` to search Hello in terminal)
  
- ![image](https://github.com/user-attachments/assets/a1abdb1a-aa11-407f-8e5b-abe7d0a6b0f3)
- 
  **2-  Save `swarm.pem` file in this directory: `/root/rl-swarm/`
 
 and make sure to back up these 
