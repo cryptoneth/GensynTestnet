@@ -118,9 +118,6 @@ sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl wge
 
  ```
  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
- pip install protobuf==5.27.0
- pip install hivemind --upgrade
- pip install -r requirements.txt
  ```
 
  ```bash
