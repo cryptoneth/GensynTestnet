@@ -154,11 +154,11 @@ and make sure to back up these
 
 ```bash
 cd
-nano rl-swarm/modal-login/temp-data/userData.json
+cat rl-swarm/modal-login/temp-data/userData.json
 ```
 ```bash
 cd
-nano rl-swarm/modal-login/temp-data/userApiKey.json
+cat rl-swarm/modal-login/temp-data/userApiKey.json
 ```
  
  ---
