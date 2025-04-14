@@ -200,6 +200,8 @@ Now, make some changes to the prerequisites to fix errors:
 ```
 cd && cd rl-swarm
 git pull
+python3 -m venv .venv && . .venv/bin/activate
+
 ```
 ```
 sed -i 's/dht = hivemind\.DHT(start=True, .*)/dht = hivemind.DHT(start=True, ensure_bootstrap_success=False, **self._dht_kwargs(grpo_args))/' $HOME/rl-swarm/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
