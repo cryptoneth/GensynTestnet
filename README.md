@@ -180,3 +180,39 @@ Done, Welcome To Swarm
 ![1500x500 (1)](https://github.com/user-attachments/assets/ef2be4d2-f1a5-4592-8173-05aadd91cdab)
 
 
+If you're having any issues running on CPU—or maybe GPU, though I doubt there’s a problem on GPU—try these steps to see if you get the correct output:
+
+First, completely close the screen session and stop the node:
+
+```
+screen -S gensyn -X quit
+```
+
+Then, ensure nothing from HiveMind or similar is running:
+
+```
+pkill -9 python
+```
+
+Now, make some changes to the prerequisites to fix errors:
+
+
+```
+cd && cd rl-swarm
+git pull
+```
+```
+sed -i 's/dht = hivemind\.DHT(start=True, .*)/dht = hivemind.DHT(start=True, ensure_bootstrap_success=False, **self._dht_kwargs(grpo_args))/' $HOME/rl-swarm/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
+```
+```
+sed -i -E 's/(startup_timeout: *float *= *)[0-9.]+/\1120/' $(python3 -c "import hivemind.p2p.p2p_daemon as m; print(m.__file__)")
+```
+```
+sed -i 's/max_steps: [0-9]\+/max_steps: 5/' rl-swarm/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml
+```
+
+Now, open a new screen session and restart the node using the command from the documentation or wherever it’s specified.
+
+#Gensyn
+
+
