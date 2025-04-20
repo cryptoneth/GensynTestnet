@@ -43,7 +43,7 @@ cp "$BACKUP_DIR/swarm.pem" . 2>/dev/null || echo "Warning: Could not restore swa
 # Apply configuration changes
 echo "Applying configuration changes..."
 sed -i 's/dht = hivemind\.DHT(start=True, .*)/dht = hivemind.DHT(start=True, ensure_bootstrap_success=False, **self._dht_kwargs(grpo_args))/' $HOME/rl-swarm/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
-sed -i 's/max_steps: [0-9]\+/max_steps: 5/' $HOME/rl-swarm/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml
+sed -i 's/max_steps: [0-9]\+/max_steps: 3/' $HOME/rl-swarm/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml
 
 # Install dependencies and start the node
 echo "Installing dependencies and starting node..."
