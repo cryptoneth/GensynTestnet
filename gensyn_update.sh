@@ -54,6 +54,10 @@ python3 -m venv .venv
 source .venv/bin/activate
 chmod +x ./run_rl_swarm.sh
 
+# Stop any existing Gensyn screen session
+echo "Stopping any existing Gensyn screen session..."
+screen -S gensyn -X quit 2>/dev/null || true
+
 # Start a new screen session for Gensyn
 echo "Starting new screen session for Gensyn..."
 screen -dmS gensyn bash -c "source .venv/bin/activate && ./run_rl_swarm.sh ; exec bash"
