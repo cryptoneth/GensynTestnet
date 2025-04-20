@@ -60,6 +60,6 @@ screen -S gensyn -X quit 2>/dev/null || true
 
 # Start a new screen session for Gensyn
 echo "Starting new screen session for Gensyn..."
-screen -dmS gensyn bash -c "source .venv/bin/activate && ./run_rl_swarm.sh ; exec bash"
+screen -dmS gensyn bash -c "source .venv/bin/activate && bash -c './run_rl_swarm.sh || true' ; exec bash"
 
 echo "Gensyn node setup and execution completed!"
