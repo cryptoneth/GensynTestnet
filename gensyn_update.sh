@@ -56,6 +56,6 @@ chmod +x ./run_rl_swarm.sh
 
 # Start a new screen session for Gensyn
 echo "Starting new screen session for Gensyn..."
-screen -dmS gensyn bash -c "nohup ./run_rl_swarm.sh > gensyn.log 2>&1 & ; exec bash"
+screen -dmS gensyn bash -c "source .venv/bin/activate && ./run_rl_swarm.sh ; exec bash"
 
 echo "Gensyn node setup and execution completed!"
