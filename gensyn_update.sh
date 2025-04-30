@@ -32,6 +32,8 @@ mv GensynTestnet/run_rl_swarm.sh rl-swarm/run_rl_swarm.sh
 
 # Change to the rl-swarm directory
 cd rl-swarm
+python3 -m venv .venv
+source .venv/bin/activate
 
 # Restore backup files
 echo "Restoring backup files..."
