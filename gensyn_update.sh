@@ -49,10 +49,6 @@ cd
 sed -i 's/max_steps: [0-9]\+/max_steps: 3/' $HOME/rl-swarm/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml
 cd rl-swarm
 
-# Install dependencies and start the node
-echo "Installing dependencies and starting node..."
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-
 # Create and activate a virtual environment, then run the script
 python3 -m venv .venv
 source .venv/bin/activate
