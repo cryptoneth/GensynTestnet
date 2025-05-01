@@ -267,65 +267,65 @@ trap cleanup INT
 
 sleep 2
 
-# Check for userData.json and skip all server-related steps if it exists
-if [ -f "modal-login/temp-data/userData.json" ]; then
-    echo -e "${CYAN}${BOLD}✅ Found userData.json. Skipping login, tunnel setup, and API key check...${NC}"
-    ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
+# Always start the development server
+cd modal-login
+echo -e "\n${CYAN}${BOLD}📦 Installing npm dependencies...${NC}"
+npm install --legacy-peer-deps
+
+echo -e "\n${CYAN}${BOLD}🚀 Launching development server...${NC}"
+if ! command -v ss &>/dev/null; then
+    echo -e "${YELLOW}${BOLD}⚠️ 'ss' command missing. Installing iproute2...${NC}"
+    if command -v apt &>/dev/null; then
+        sudo apt update && sudo apt install -y iproute2
+    elif command -v yum &>/dev/null; then
+        sudo yum install -y iproute
+    elif command -v pacman &>/dev/null; then
+        sudo pacman -Sy iproute2
+    else
+        echo -e "${RED}${BOLD}❌ Unable to install 'ss'. Package manager not found.${NC}"
+        exit 1
+    fi
+fi
+
+PORT_LINE=$(ss -ltnp | grep ":3000 ")
+if [ -n "$PORT_LINE" ]; then
+    PID=$(echo "$PORT_LINE" | grep -oP 'pid=\K[0-9]+')
+    if [ -n "$PID" ]; then
+        echo -e "${YELLOW}${BOLD}⚠️ Port 3000 in use. Terminating process: $PID${NC}"
+        kill -9 $PID
+        sleep 2
+    fi
+fi
+
+npm run dev > server.log 2>&1 &
+SERVER_PID=$!
+MAX_WAIT=30
+
+for ((i = 0; i < MAX_WAIT; i++)); do
+    if grep -q "Local:        http://localhost:" server.log; then
+        PORT=$(grep "Local:        http://localhost:" server.log | sed -n 's/.*http:\/\/localhost:\([0-9]*\).*/\1/p')
+        if [ -n "$PORT" ]; then
+            echo -e "${GREEN}${BOLD}✅ Server running on port $PORT!${NC}"
+            break
+        fi
+    fi
+    sleep 1
+done
+
+if [ $i -eq $MAX_WAIT ]; then
+    echo -e "${RED}${BOLD}❌ Server failed to start within time limit.${NC}"
+    kill $SERVER_PID 2>/dev/null || true
+    exit 1
+fi
+
+# Check for userData.json and skip tunnel setup if it exists
+if [ -f "temp-data/userData.json" ]; then
+    echo -e "${CYAN}${BOLD}✅ Found userData.json. Skipping tunnel setup...${NC}"
+    ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' temp-data/userData.json)
     echo -e "${CYAN}${BOLD}✅ Organization ID set to: $ORG_ID${NC}"
     echo -e "${CYAN}${BOLD}✅ Using contract: $SWARM_CONTRACT${NC}"
     echo -e "${YELLOW}${BOLD}⚠️ Note: Ensure ORG_ID ($ORG_ID) matches the selected contract ($SWARM_CONTRACT). If not, re-login may be required.${NC}"
 else
-    cd modal-login
-
-    echo -e "\n${CYAN}${BOLD}📦 Installing npm dependencies...${NC}"
-    npm install --legacy-peer-deps
-    
-    echo -e "\n${CYAN}${BOLD}🚀 Launching development server...${NC}"
-    if ! command -v ss &>/dev/null; then
-        echo -e "${YELLOW}${BOLD}⚠️ 'ss' command missing. Installing iproute2...${NC}"
-        if command -v apt &>/dev/null; then
-            sudo apt update && sudo apt install -y iproute2
-        elif command -v yum &>/dev/null; then
-            sudo yum install -y iproute
-        elif command -v pacman &>/dev/null; then
-            sudo pacman -Sy iproute2
-        else
-            echo -e "${RED}${BOLD}❌ Unable to install 'ss'. Package manager not found.${NC}"
-            exit 1
-        fi
-    fi
-    
-    PORT_LINE=$(ss -ltnp | grep ":3000 ")
-    if [ -n "$PORT_LINE" ]; then
-        PID=$(echo "$PORT_LINE" | grep -oP 'pid=\K[0-9]+')
-        if [ -n "$PID" ]; then
-            echo -e "${YELLOW}${BOLD}⚠️ Port 3000 in use. Terminating process: $PID${NC}"
-            kill -9 $PID
-            sleep 2
-        fi
-    fi
-    
-    npm run dev > server.log 2>&1 &
-    SERVER_PID=$!
-    MAX_WAIT=30
-    
-    for ((i = 0; i < MAX_WAIT; i++)); do
-        if grep -q "Local:        http://localhost:" server.log; then
-            PORT=$(grep "Local:        http://localhost:" server.log | sed -n 's/.*http:\/\/localhost:\([0-9]*\).*/\1/p')
-            if [ -n "$PORT" ]; then
-                echo -e "${GREEN}${BOLD}✅ Server running on port $PORT!${NC}"
-                break
-            fi
-        fi
-        sleep 1
-    done
-    
-    if [ $i -eq $MAX_WAIT ]; then
-        echo -e "${RED}${BOLD}❌ Server failed to start within time limit.${NC}"
-        kill $SERVER_PID 2>/dev/null || true
-        exit 1
-    fi
-
     echo -e "\n${PURPLE}${BOLD}🔗 Want to set up a tunnel (localtunnel, cloudflared, or ngrok)?${NC}"
     read -p "➡️ [Y/n]: " tunnel_choice
     tunnel_choice=${tunnel_choice:-N}
@@ -336,7 +336,7 @@ else
             local url=$1
             local max_retries=3
             local retry=0
-            while [ $retry -lt at $max_retries ]; do
+            while [ $retry -lt $max_retries ]; do
                 http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null)
                 if [ "$http_code" = "200" ] || [ "$http_code" = "404" ] || [ "$http_code" = "301" ] || [ "$http_code" = "302" ]; then
                     return 0
@@ -392,7 +392,7 @@ else
             fi
             echo -e "\n${CYAN}${BOLD}📦 Installing ngrok...${NC}"
             NGROK_URL="https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-$OS-$NGROK_ARCH.tgz"
-            wget -q --show-progress "$NGROK_URL" -O ngrok.tgz
+            wget -q --show-progress "$NFROK_URL" -O ngrok.tgz
             if [ $? -ne 0 ]; then
                 echo -e "${RED}${BOLD}❌ Failed to download ngrok.${NC}"
                 return 1
@@ -590,7 +590,7 @@ else
         echo -e "\n${CYAN}${BOLD}⏳ Awaiting login completion...${NC}"
         MAX_WAIT_LOGIN=60
         counter=0
-        while [ ! -f "modal-login/temp-data/userData.json" ]; do
+        while [ ! -f "temp-data/userData.json" ]; do
             sleep 3
             counter=$((counter + 3))
             if [ $counter -ge $MAX_WAIT_LOGIN ]; then
@@ -598,49 +598,52 @@ else
                 exit 1
             fi
         done
+
+        echo -e "\n${CYAN}${BOLD}⏳ Waiting for API key activation...${NC}"
+        if ! nc -z localhost 3000 >/dev/null 2>&1; then
+            echo -e "${RED}${BOLD}❌ Server not running on port 3000. Check server.log for errors.${NC}"
+            cat server.log 2>/dev/null || true
+            exit 1
+        fi
+        MAX_WAIT_API=120
+        counter=0
+        while true; do
+            STATUS=$(curl -s "http://localhost:3000/api/get-api-key-status?orgId=$ORG_ID")
+            if [[ "$STATUS" == "activated" ]]; then
+                echo -e "${GREEN}${BOLD}✅ API key activated! Proceeding...${NC}"
+                break
+            else
+                echo -e "${CYAN}${BOLD}⏳ Still waiting for API key activation...${NC}"
+                sleep 5
+                counter=$((counter + 5))
+                if [ $counter -ge $MAX_WAIT_API ]; then
+                    echo -e "${RED}${BOLD}❌ Timeout waiting for API key activation. Check server and retry.${NC}"
+                    exit 1
+                fi
+            fi
+        done
+
+        ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' temp-data/userData.json)
+        echo -e "${CYAN}${BOLD}✅ Organization ID set to: $ORG_ID${NC}"
+        echo -e "${CYAN}${BOLD}✅ Using contract: $SWARM_CONTRACT${NC}"
+        echo -e "${YELLOW}${BOLD}⚠️ Note: Ensure ORG_ID ($ORG_ID) matches the selected contract ($SWARM_CONTRACT). If not, re-login may be required.${NC}"
     else
         echo -e "${YELLOW}${BOLD}⚠️ Tunnel setup skipped. Ensure userData.json exists from a manual login.${NC}"
-        if [ ! -f "modal-login/temp-data/userData.json" ]; then
+        if [ ! -f "temp-data/userData.json" ]; then
             echo -e "${RED}${BOLD}❌ userData.json missing. Please log in manually to create it and retry.${NC}"
             exit 1
         fi
+        ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' temp-data/userData.json)
+        echo -e "${CYAN}${BOLD}✅ Organization ID set to: $ORG_ID${NC}"
+        echo -e "${CYAN}${BOLD}✅ Using contract: $SWARM_CONTRACT${NC}"
+        echo -e "${YELLOW}${BOLD}⚠️ Note: Ensure ORG_ID ($ORG_ID) matches the selected contract ($SWARM_CONTRACT). If not, re-login may be required.${NC}"
     fi
-
-    cd ..
-
-    echo -e "${GREEN}${BOLD}✅ userData.json ready! Moving to next steps...${NC}"
-    rm -f server.log localtunnel_output.log cloudflared_output.log ngrok_output.log
-
-    ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
-    echo -e "${CYAN}${BOLD}✅ Organization ID set to: $ORG_ID${NC}"
-    echo -e "${CYAN}${BOLD}✅ Using contract: $SWARM_CONTRACT${NC}"
-    echo -e "${YELLOW}${BOLD}⚠️ Note: Ensure ORG_ID ($ORG_ID) matches the selected contract ($SWARM_CONTRACT). If not, re-login may be required.${NC}"
-
-    # Wait for API key activation only if userData.json was just created
-    echo -e "\n${CYAN}${BOLD}⏳ Waiting for API key activation...${NC}"
-    if ! nc -z localhost 3000 >/dev/null 2>&1; then
-        echo -e "${RED}${BOLD}❌ Server not running on port 3000. Check server.log for errors.${NC}"
-        cat server.log 2>/dev/null || true
-        exit 1
-    fi
-    MAX_WAIT_API=120
-    counter=0
-    while true; do
-        STATUS=$(curl -s "http://localhost:3000/api/get-api-key-status?orgId=$ORG_ID")
-        if [[ "$STATUS" == "activated" ]]; then
-            echo -e "${GREEN}${BOLD}✅ API key activated! Proceeding...${NC}"
-            break
-        else
-            echo -e "${CYAN}${BOLD}⏳ Still waiting for API key activation...${NC}"
-            sleep 5
-            counter=$((counter + 5))
-            if [ $counter -ge $MAX_WAIT_API ]; then
-                echo -e "${RED}${BOLD}❌ Timeout waiting for API key activation. Check server and retry.${NC}"
-                exit 1
-            fi
-        fi
-    done
 fi
+
+cd ..
+
+echo -e "${GREEN}${BOLD}✅ userData.json ready! Moving to next steps...${NC}"
+rm -f modal-login/server.log modal-login/localtunnel_output.log modal-login/cloudflared_output.log modal-login/ngrok_output.log
 
 # Set up .env file (mimicking script 1)
 ENV_FILE="$ROOT/modal-login/.env"
@@ -691,7 +694,15 @@ if [ -z "$CONFIG_PATH" ]; then
     else
         echo -e "${YELLOW}${BOLD}⚠️ No GPU detected. Using CPU configuration.${NC}"
         pip install -r "$ROOT"/requirements-cpu.txt
-        CONFIG_PATH="$ROOT/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml"
+        case "$PARAM_B" in
+            0.5 | 1.5) 
+                CONFIG_PATH="$ROOT/hivemind_exp/configs/mac/grpo-qwen-2.5-${PARAM_B}b-deepseek-r1.yaml"
+                ;;
+            *)  
+                echo -e "${YELLOW}${BOLD}⚠️ Unrecognized parameter size for CPU. Defaulting to 0.5b.${NC}"
+                CONFIG_PATH="$ROOT/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml"
+                ;;
+        esac
         GAME="gsm8k"
         echo -e "${CYAN}${BOLD}📜 Config file: $CONFIG_PATH${NC}"
     fi
