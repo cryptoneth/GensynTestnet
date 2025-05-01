@@ -267,9 +267,9 @@ trap cleanup INT
 
 sleep 2
 
-# Check for userData.json and skip tunnel setup if it exists
+# Check for userData.json and skip all server-related steps if it exists
 if [ -f "modal-login/temp-data/userData.json" ]; then
-    echo -e "${CYAN}${BOLD}✅ Found userData.json. Skipping login and tunnel setup...${NC}"
+    echo -e "${CYAN}${BOLD}✅ Found userData.json. Skipping login, tunnel setup, and API key check...${NC}"
     ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
     echo -e "${CYAN}${BOLD}✅ Organization ID set to: $ORG_ID${NC}"
     echo -e "${CYAN}${BOLD}✅ Using contract: $SWARM_CONTRACT${NC}"
@@ -598,23 +598,40 @@ else
                 exit 1
             fi
         done
-    else
-        echo -e "${YELLOW}${BOLD}⚠️ Tunnel setup skipped. Ensure userData.json exists from a manual login.${NC}"
-        if [ ! -f "modal-login/temp-data/userData.json" ]; then
-            echo -e "${RED}${BOLD}❌ userData.json missing. Please log in manually to create it and retry.${NC}"
+
+        echo -e "\n${CYAN}${BOLD}⏳ Waiting for API key activation...${NC}"
+        if ! nc -z localhost 3000 >/dev/null 2>&1; then
+            echo -e "${RED}${BOLD}❌ Server not running on port 3000. Check server.log for errors.${NC}"
+            cat server.log 2>/dev/null || true
             exit 1
         fi
-    fi
+        MAX_WAIT_API=120
+        counter=0
+        while true; do
+            STATUS=$(curl -s "http://localhost:3000/api/get-api-key-status?orgId=$ORG_ID")
+            if [[ "$STATUS" == "activated" ]]; then
+                echo -e "${GREEN}${BOLD}✅ API key activated! Proceeding...${NC}"
+                break
+            else
+                echo -e "${CYAN}${BOLD}⏳ Still waiting for API key activation...${NC}"
+                sleep 5
+                counter=$((counter + 5))
+                if [ $counter -ge $MAX_WAIT_API ]; then
+                    echo -e "${RED}${BOLD}❌ Timeout waiting for API key activation. Check server and retry.${NC}"
+                    exit 1
+                fi
+            fi
+        done
 
-    cd ..
+        cd ..
 
-    echo -e "${GREEN}${BOLD}✅ userData.json ready! Moving to next steps...${NC}"
-    rm -f server.log localtunnel_output.log cloudflared_output.log ngrok_output.log
+        echo -e "${GREEN}${BOLD}✅ userData.json ready! Moving to next steps...${NC}"
+        rm -f server.log localtunnel_output.log cloudflared_output.log ngrok_output.log
 
-    ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
-    echo -e "${CYAN}${BOLD}✅ Organization ID set to: $ORG_ID${NC}"
-    echo -e "${CYAN}${BOLD}✅ Using contract: $SWARM_CONTRACT${NC}"
-    echo -e "${YELLOW}${BOLD}⚠️ Note: Ensure ORG_ID ($ORG_ID) matches the selected contract ($SWARM_CONTRACT). If not, re-login may be required.${NC}"
+        ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
+        echo -e "${CYAN}${BOLD}✅ Organization ID set to: $ORG_ID${NC}"
+        echo -e "${CYAN}${BOLD}✅ Using contract: $SWARM_CONTRACT${NC}"
+        echo -e "${YELLOW}${BOLD}⚠️ Note: Ensure ORG_ID ($ORG_ID) matches the selected contract ($SWARM_CONTRACT). If not, re-login may be required.${NC}"
 fi
 
 # Set up .env file (mimicking script 1)
@@ -631,31 +648,6 @@ else
 fi
 echo -e "${CYAN}${BOLD}📄 .env file contents:${NC}"
 cat "$ENV_FILE"
-
-# Wait for API key activation
-echo -e "\n${CYAN}${BOLD}⏳ Waiting for API key activation...${NC}"
-if ! nc -z localhost 3000 >/dev/null 2>&1; then
-    echo -e "${RED}${BOLD}❌ Server not running on port 3000. Check server.log for errors.${NC}"
-    cat server.log 2>/dev/null || true
-    exit 1
-fi
-MAX_WAIT_API=120
-counter=0
-while true; do
-    STATUS=$(curl -s "http://localhost:3000/api/get-api-key-status?orgId=$ORG_ID")
-    if [[ "$STATUS" == "activated" ]]; then
-        echo -e "${GREEN}${BOLD}✅ API key activated! Proceeding...${NC}"
-        break
-    else
-        echo -e "${CYAN}${BOLD}⏳ Still waiting for API key activation...${NC}"
-        sleep 5
-        counter=$((counter + 5))
-        if [ $counter -ge $MAX_WAIT_API ]; then
-            echo -e "${RED}${BOLD}❌ Timeout waiting for API key activation. Check server and retry.${NC}"
-            exit 1
-        fi
-    fi
-done
 
 # Set up Python virtual environment
 echo -e "\n${CYAN}${BOLD}🐍 Preparing Python virtual environment...${NC}"
