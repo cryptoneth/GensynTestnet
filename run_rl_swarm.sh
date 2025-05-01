@@ -336,7 +336,7 @@ else
             local url=$1
             local max_retries=3
             local retry=0
-            while [ $retry -lt $max_retries ]; do
+            while [ $retry -lt at $max_retries ]; do
                 http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null)
                 if [ "$http_code" = "200" ] || [ "$http_code" = "404" ] || [ "$http_code" = "301" ] || [ "$http_code" = "302" ]; then
                     return 0
@@ -598,40 +598,48 @@ else
                 exit 1
             fi
         done
-
-        echo -e "\n${CYAN}${BOLD}⏳ Waiting for API key activation...${NC}"
-        if ! nc -z localhost 3000 >/dev/null 2>&1; then
-            echo -e "${RED}${BOLD}❌ Server not running on port 3000. Check server.log for errors.${NC}"
-            cat server.log 2>/dev/null || true
+    else
+        echo -e "${YELLOW}${BOLD}⚠️ Tunnel setup skipped. Ensure userData.json exists from a manual login.${NC}"
+        if [ ! -f "modal-login/temp-data/userData.json" ]; then
+            echo -e "${RED}${BOLD}❌ userData.json missing. Please log in manually to create it and retry.${NC}"
             exit 1
         fi
-        MAX_WAIT_API=120
-        counter=0
-        while true; do
-            STATUS=$(curl -s "http://localhost:3000/api/get-api-key-status?orgId=$ORG_ID")
-            if [[ "$STATUS" == "activated" ]]; then
-                echo -e "${GREEN}${BOLD}✅ API key activated! Proceeding...${NC}"
-                break
-            else
-                echo -e "${CYAN}${BOLD}⏳ Still waiting for API key activation...${NC}"
-                sleep 5
-                counter=$((counter + 5))
-                if [ $counter -ge $MAX_WAIT_API ]; then
-                    echo -e "${RED}${BOLD}❌ Timeout waiting for API key activation. Check server and retry.${NC}"
-                    exit 1
-                fi
+    fi
+
+    cd ..
+
+    echo -e "${GREEN}${BOLD}✅ userData.json ready! Moving to next steps...${NC}"
+    rm -f server.log localtunnel_output.log cloudflared_output.log ngrok_output.log
+
+    ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
+    echo -e "${CYAN}${BOLD}✅ Organization ID set to: $ORG_ID${NC}"
+    echo -e "${CYAN}${BOLD}✅ Using contract: $SWARM_CONTRACT${NC}"
+    echo -e "${YELLOW}${BOLD}⚠️ Note: Ensure ORG_ID ($ORG_ID) matches the selected contract ($SWARM_CONTRACT). If not, re-login may be required.${NC}"
+
+    # Wait for API key activation only if userData.json was just created
+    echo -e "\n${CYAN}${BOLD}⏳ Waiting for API key activation...${NC}"
+    if ! nc -z localhost 3000 >/dev/null 2>&1; then
+        echo -e "${RED}${BOLD}❌ Server not running on port 3000. Check server.log for errors.${NC}"
+        cat server.log 2>/dev/null || true
+        exit 1
+    fi
+    MAX_WAIT_API=120
+    counter=0
+    while true; do
+        STATUS=$(curl -s "http://localhost:3000/api/get-api-key-status?orgId=$ORG_ID")
+        if [[ "$STATUS" == "activated" ]]; then
+            echo -e "${GREEN}${BOLD}✅ API key activated! Proceeding...${NC}"
+            break
+        else
+            echo -e "${CYAN}${BOLD}⏳ Still waiting for API key activation...${NC}"
+            sleep 5
+            counter=$((counter + 5))
+            if [ $counter -ge $MAX_WAIT_API ]; then
+                echo -e "${RED}${BOLD}❌ Timeout waiting for API key activation. Check server and retry.${NC}"
+                exit 1
             fi
-        done
-
-        cd ..
-
-        echo -e "${GREEN}${BOLD}✅ userData.json ready! Moving to next steps...${NC}"
-        rm -f server.log localtunnel_output.log cloudflared_output.log ngrok_output.log
-
-        ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
-        echo -e "${CYAN}${BOLD}✅ Organization ID set to: $ORG_ID${NC}"
-        echo -e "${CYAN}${BOLD}✅ Using contract: $SWARM_CONTRACT${NC}"
-        echo -e "${YELLOW}${BOLD}⚠️ Note: Ensure ORG_ID ($ORG_ID) matches the selected contract ($SWARM_CONTRACT). If not, re-login may be required.${NC}"
+        fi
+    done
 fi
 
 # Set up .env file (mimicking script 1)
