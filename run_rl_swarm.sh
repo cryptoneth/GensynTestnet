@@ -331,7 +331,7 @@ else
     tunnel_choice=${tunnel_choice:-N}
 
     if [[ $tunnel_choice =~ ^[Yy]$ ]]; then
-        # Tunnel setup functions (unchanged from original for brevity)
+        # Tunnel setup functions
         check_url() {
             local url=$1
             local max_retries=3
@@ -424,7 +424,7 @@ else
                 sleep 5
                 URL=$(grep -o "https://[^ ]*" localtunnel_output.log | head -n1)
                 if [ -n "$URL" ]; then
-                    PASS=$(curl -s https://loca.ltս
+                    PASS=$(curl -s https://loca.lt/mytunnelpassword)
                     FORWARDING_URL="$URL"
                     echo -e "${GREEN}${BOLD}✅ Success! Visit this URL: ${YELLOW}${BOLD}${URL}${GREEN}${BOLD} and enter password: ${YELLOW}${BOLD}${PASS}${GREEN}${BOLD} to log in with your email.${NC}"
                     return 0
