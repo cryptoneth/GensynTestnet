@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Set the root directory to the current working directory
 ROOT=$PWD
 
-# Define color codes for output formatting
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 PURPLE='\033[0;95m'
@@ -13,7 +11,6 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# Export environment variables for multi-addresses and identity
 export PUB_MULTI_ADDRS
 export PEER_MULTI_ADDRS
 export HOST_MULTI_ADDRS
@@ -22,7 +19,6 @@ export ORG_ID
 export HF_HUB_DOWNLOAD_TIMEOUT=120
 export TUNNEL_TYPE=""
 
-# Set default values for multi-addresses and identity path
 DEFAULT_PUB_MULTI_ADDRS=""
 PUB_MULTI_ADDRS=${PUB_MULTI_ADDRS:-$DEFAULT_PUB_MULTI_ADDRS}
 
@@ -35,36 +31,38 @@ HOST_MULTI_ADDRS=${HOST_MULTI_ADDRS:-$DEFAULT_HOST_MULTI_ADDRS}
 DEFAULT_IDENTITY_PATH="$ROOT"/swarm.pem
 IDENTITY_PATH=${IDENTITY_PATH:-$DEFAULT_IDENTITY_PATH}
 
-# Define swarm contract addresses
 SMALL_SWARM_CONTRACT="0x69C6e1D608ec64885E7b185d39b04B491a71768C"
 BIG_SWARM_CONTRACT="0x6947c6E196a48B77eFa9331EC1E3e45f3Ee5Fd58"
 
-# Check OS and install necessary development tools
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   if command -v apt &>/dev/null; then
     echo -e "${CYAN}${BOLD}[✓] Debian/Ubuntu detected. Installing build-essential, gcc, g++...${NC}"
     sudo apt update > /dev/null 2>&1
     sudo apt install -y build-essential gcc g++ > /dev/null 2>&1
+
   elif command -v yum &>/dev/null; then
     echo -e "${CYAN}${BOLD}[✓] RHEL/CentOS detected. Installing Development Tools...${NC}"
     sudo yum groupinstall -y "Development Tools" > /dev/null 2>&1
     sudo yum install -y gcc gcc-c++ > /dev/null 2>&1
+
   elif command -v pacman &>/dev/null; then
     echo -e "${CYAN}${BOLD}[✓] Arch Linux detected. Installing base-devel...${NC}"
     sudo pacman -Sy --noconfirm base-devel gcc > /dev/null 2>&1
+
   else
     echo -e "${RED}${BOLD}[✗] Linux detected but unsupported package manager.${NC}"
     exit 1
   fi
+
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   echo -e "${CYAN}${BOLD}[✓] macOS detected. Installing Xcode Command Line Tools...${NC}"
   xcode-select --install > /dev/null 2>&1
+
 else
   echo -e "${RED}${BOLD}[✗] Unsupported OS: $OSTYPE${NC}"
   exit 1
 fi
 
-# Check for gcc and export it as CC
 if command -v gcc &>/dev/null; then
   export CC=$(command -v gcc)
   echo -e "${CYAN}${BOLD}[✓] Exported CC=$CC${NC}"
@@ -72,7 +70,6 @@ else
   echo -e "${RED}${BOLD}[✗] gcc not found. Please install it manually.${NC}"
 fi
 
-# Function to check CUDA and GPU availability
 check_cuda_installation() {
     echo -e "\n${CYAN}${BOLD}[✓] Checking GPU and CUDA installation...${NC}"
     
@@ -218,49 +215,43 @@ check_cuda_installation() {
     return 0
 }
 
-# Run CUDA installation check
 check_cuda_installation
 
 export CPU_ONLY
 
-# Display mode based on CPU/GPU availability
 if [ "$CPU_ONLY" = "true" ]; then
     echo -e "\n${YELLOW}${BOLD}[✓] Running in CPU-only mode${NC}"
 else
     echo -e "\n${GREEN}${BOLD}[✓] Running with GPU acceleration${NC}"
 fi
 
-# Prompt user to select a swarm
 while true; do
-    echo -e "\n\033[1;35m🚀 Ready to join a swarm? Which one sparks your interest? 🚀\n\033[1;33m[A] Math (Smooth sailing) \n[B] Math Hard (Bring it on!)\033[0m"
-    read -p "🌈 Pick one (A/B, or press Enter for A): " ab
+    echo -e "\n\033[36m\033[1mPlease select a swarm to join:\n[A] Math\n[B] Math Hard\033[0m"
+    read -p "> " ab
     ab=${ab:-A}
     case $ab in
         [Aa]*)  USE_BIG_SWARM=false; break ;;
         [Bb]*)  USE_BIG_SWARM=true; break ;;
-        *)      echo -e "\033[1;35m⚠️ Hey, just go with A or B, okay? ⚠️\033[0m" ;;
+        *)      echo ">>> Please answer A or B." ;;
     esac
 done
 
-# Set swarm contract based on user choice
 if [ "$USE_BIG_SWARM" = true ]; then
     SWARM_CONTRACT="$BIG_SWARM_CONTRACT"
 else
     SWARM_CONTRACT="$SMALL_SWARM_CONTRACT"
 fi
 
-# Prompt user to select parameter size
 while true; do
-    echo -e "\n\033[1;35m🔥 What's the scale of your adventure? Choose a parameter size (in billions): 🔥\n\033[1;33m[0.5, 1.5, 7, 32, 72]\033[0m"
-    read -p "🌈 Type your choice (or press Enter for 0.5): " pc
+    echo -e "\n\033[36m\033[1mHow many parameters (in billions)? [0.5, 1.5, 7, 32, 72]\033[0m"
+    read -p "> " pc
     pc=${pc:-0.5}
     case $pc in
         0.5 | 1.5 | 7 | 32 | 72) PARAM_B=$pc; break ;;
-        *) echo -e "\033[1;35m⚠️ Hold up! Only choose from [0.5, 1.5, 7, 32, 72]! ⚠️\033[0m" ;;
+        *) echo ">>> Please answer in [0.5, 1.5, 7, 32, 72]." ;;
     esac
 done
 
-# Cleanup function to terminate processes
 cleanup() {
     echo -e "${YELLOW}${BOLD}[✓] Shutting down processes...${NC}"
     kill $SERVER_PID 2>/dev/null || true
@@ -268,12 +259,10 @@ cleanup() {
     exit 0
 }
 
-# Trap SIGINT to run cleanup
 trap cleanup INT
 
 sleep 2
 
-# Check if userData.json exists
 if [ -f "modal-login/temp-data/userData.json" ]; then
     cd modal-login
 
@@ -462,7 +451,7 @@ else
             return 0
         fi
         echo -e "${YELLOW}${BOLD}[✓] Installing ngrok...${NC}"
-        NGROK_URL="https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-$OS-$NGROK_ARCH.tgz"
+        NGROK_URL="https://bin.equinox.io/c/bNyj1mQVY/debugger/ngrok-v3-stable-$OS-$NGROK_ARCH.tgz"
         wget -q --show-progress "$NGROK_URL" -O ngrok.tgz
         if [ $? -ne 0 ]; then
             echo -e "${RED}${BOLD}[✗] Failed to download ngrok.${NC}"
@@ -633,7 +622,7 @@ else
                 FORWARDING_URL="$NGROK_URL"
                 return 0
             else
-                echo -e "${RED}${BOLD}[✗] Failed to get ngrok URL (method 3).${NC}"
+                echo -e "${RED}${anguage}[✗] Failed to get ngrok URL (method 3).${NC}"
                 kill $TUNNEL_PID 2>/dev/null || true
             fi
         fi
@@ -655,7 +644,6 @@ else
         return 1
     }
 
-    # Prompt user for tunnel setup
     echo -e "\n${CYAN}${BOLD}[?] Would you like to proceed with the tunnel setup (e.g., localtunnel, cloudflared, ngrok)? [y/N]${NC}"
     read -p "> " tunnel_choice
     tunnel_choice=${tunnel_choice:-N}
@@ -711,13 +699,11 @@ else
     fi
 fi
 
-# Set up Python virtual environment
 echo -e "${CYAN}${BOLD}[✓] Setting up Python virtual environment...${NC}"
 python3 -m venv .venv && . .venv/bin/activate && \
 echo -e "${GREEN}${BOLD}[✓] Python virtual environment set up successfully.${NC}" || \
 echo -e "${RED}${BOLD}[✗] Failed to set up virtual environment.${NC}"
 
-# Configure based on GPU/CPU detection
 if [ -z "$CONFIG_PATH" ]; then
     if command -v nvidia-smi &> /dev/null || [ -d "/proc/driver/nvidia" ]; then
         echo -e "${GREEN}${BOLD}[✓] GPU detected${NC}"
@@ -753,7 +739,6 @@ if [ -z "$CONFIG_PATH" ]; then
     fi
 fi
 
-# Prompt for Hugging Face token
 if [ -n "${HF_TOKEN}" ]; then
     HUGGINGFACE_ACCESS_TOKEN=${HF_TOKEN}
 else
@@ -766,13 +751,11 @@ else
     esac
 fi
 
-# Final message before training
 echo -e "\n${GREEN}${BOLD}[✓] Good luck in the swarm! Your training session is about to begin.\n${NC}"
 [ "$(uname)" = "Darwin" ] && sed -i '' -E -e 's/(startup_timeout: *float *= *)[0-9.]+/\1120/' -e '/startup_timeout: float = 120,/a\'$'\n''    bootstrap_timeout: float = 120,' -e '/anonymous_p2p = await cls\.create\(/a\'$'\n''        bootstrap_timeout=120,' $(python3 -c "import hivemind.p2p.p2p_daemon as m; print(m.__file__)") || sed -i -E -e 's/(startup_timeout: *float *= *)[0-9.]+/\1120/' -e '/startup_timeout: float = 120,/a\    bootstrap_timeout: float = 120,' -e '/anonymous_p2p = await cls\.create\(/a\        bootstrap_timeout=120,' $(python3 -c "import hivemind.p2p.p2p_daemon as m; print(m.__file__)")
 
 [ "$(uname)" = "Darwin" ] && sed -i '' -e 's/bootstrap_timeout: Optional\[float\] = None/bootstrap_timeout: float = 120/' -e 's/p2p = await P2P.create(\*\*kwargs)/p2p = await P2P.create(bootstrap_timeout=120, **kwargs)/' $(python3 -c 'import hivemind.dht.node as m; print(m.__file__)') || sed -i -e 's/bootstrap_timeout: Optional\[float\] = None/bootstrap_timeout: float = 120/' -e 's/p2p = await P2P.create(\*\*kwargs)/p2p = await P2P.create(bootstrap_timeout=120, **kwargs)/' $(python3 -c 'import hivemind.dht.node as m; print(m.__file__)')
 
-# Run training based on ORG_ID availability
 if [ -n "$ORG_ID" ]; then
     python -m hivemind_exp.gsm8k.train_single_gpu \
         --hf_token "$HUGGINGFACE_ACCESS_TOKEN" \
