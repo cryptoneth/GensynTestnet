@@ -170,6 +170,7 @@ cat rl-swarm/modal-login/temp-data/userApiKey.json
 
 ---
 
+
 Track Your Node With this Bot on Tg
 
 @gensyntrackbot
@@ -179,6 +180,20 @@ Example : /check QmZPwBPynMxz56tTaj25QFXdo2YFHA....
 Done, Welcome To Swarm
 ![1500x500 (1)](https://github.com/user-attachments/assets/ef2be4d2-f1a5-4592-8173-05aadd91cdab)
 
+##Update Your Node
+
+```bash
+cd
+
+rm -r GensynTestnet
+
+git clone https://github.com/cryptoneth/GensynTestnet/
+
+cd GensynTestnet
+
+chmod +x gensyn_update.sh && ./gensyn_update.sh
+
+```
 
 
 #Gensyn
