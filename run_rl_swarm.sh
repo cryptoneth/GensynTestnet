@@ -699,6 +699,13 @@ if [ -z "$CONFIG_PATH" ]; then
     fi
 fi
 
+# Verify hivemind_exp installation
+if ! python3 -c "import hivemind_exp" 2>/dev/null; then
+    echo -e "${RED}${BOLD}[✗] hivemind_exp module not found. Please check requirements installation.${NC}"
+    echo -e "${YELLOW}${BOLD}[!] Ensure requirements-gpu.txt or requirements-cpu.txt includes hivemind_exp and dependencies.${NC}"
+    exit 1
+fi
+
 if [ -n "${HF_TOKEN}" ]; then
     HUGGINGFACE_ACCESS_TOKEN=${HF_TOKEN}
 else
@@ -712,6 +719,50 @@ else
 fi
 
 echo -e "\n${GREEN}${BOLD}[✓] Good luck in the swarm! Training session starting...${NC}"
+
+# Apply sed commands for p2p timeout, skip if already applied
+P2P_DAEMON_FILE=$(python3 -c "import hivemind.p2p.p2p_daemon as m; print(m.__file__)" 2>/dev/null)
+DHT_NODE_FILE=$(python3 -c "import hivemind.dht.node as m; print(m.__file__)" 2>/dev/null)
+
+if [ -n "$P2P_DAEMON_FILE" ] && [ -f "$P2P_DAEMON_FILE" ]; then
+    if ! grep -q "bootstrap_timeout: float = 120" "$P2P_DAEMON_FILE"; then
+        if [ "$(uname)" = "Darwin" ]; then
+            sed -i '' -E -e 's/(startup_timeout: *float *= *)[0-9.]+/\1120/' \
+                -e '/startup_timeout: float = 120,/a\'$'\n''    bootstrap_timeout: float = 120,' \
+                -e '/anonymous_p2p = await cls\.create\(/a\'$'\n''        bootstrap_timeout=120,' \
+                "$P2P_DAEMON_FILE"
+        else
+            sed -i -E -e 's/(startup_timeout: *float *= *)[0-9.]+/\1120/' \
+                -e '/startup_timeout: float = 120,/a\    bootstrap_timeout: float = 120,' \
+                -e '/anonymous_p2p = await cls\.create\(/a\        bootstrap_timeout=120,' \
+                "$P2P_DAEMON_FILE"
+        fi
+        echo -e "${CYAN}${BOLD}[✓] Applied p2p_daemon timeout changes${NC}"
+    else
+        echo -e "${GREEN}${BOLD}[✓] p2p_daemon timeout changes already applied, skipping${NC}"
+    fi
+else
+    echo -e "${YELLOW}${BOLD}[!] Could not locate hivemind.p2p.p2p_daemon. Skipping timeout changes.${NC}"
+fi
+
+if [ -n "$DHT_NODE_FILE" ] && [ -f "$DHT_NODE_FILE" ]; then
+    if ! grep -q "bootstrap_timeout: float = 120" "$DHT_NODE_FILE"; then
+        if [ "$(uname)" = "Darwin" ]; then
+            sed -i '' -e 's/bootstrap_timeout: Optional\[float\] = None/bootstrap_timeout: float = 120/' \
+                -e 's/p2p = await P2P.create(\*\*kwargs)/p2p = await P2P.create(bootstrap_timeout=120, **kwargs)/' \
+                "$DHT_NODE_FILE"
+        else
+            sed -i -e 's/bootstrap_timeout: Optional\[float\] = None/bootstrap_timeout: float = 120/' \
+                -e 's/p2p = await P2P.create(\*\*kwargs)/p2p = await P2P.create(bootstrap_timeout=120, **kwargs)/' \
+                "$DHT_NODE_FILE"
+        fi
+        echo -e "${CYAN}${BOLD}[✓] Applied dht_node timeout changes${NC}"
+    else
+        echo -e "${GREEN}${BOLD}[✓] dht_node timeout changes already applied, skipping${NC}"
+    fi
+else
+    echo -e "${YELLOW}${BOLD}[!] Could not locate hivemind.dht.node. Skipping timeout changes.${NC}"
+fi
 
 # Update max_steps in config file at the end
 echo -e "${CYAN}${BOLD}[✓] Updating max_steps in config file...${NC}"
