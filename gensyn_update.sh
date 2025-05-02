@@ -47,6 +47,11 @@ echo "Applying configuration changes..."
 sed -i 's/dht = hivemind\.DHT(start=True, .*)/dht = hivemind.DHT(start=True, ensure_bootstrap_success=False, **self._dht_kwargs(grpo_args))/' $HOME/rl-swarm/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
 cd
 sed -i 's/max_steps: [0-9]\+/max_steps: 3/' $HOME/rl-swarm/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml
+cl rl-swarm
+git reset --hard
+git pull
+git fetch
+git reset --hard origin/main
 cd rl-swarm
 
 # Create and activate a virtual environment, then run the script
