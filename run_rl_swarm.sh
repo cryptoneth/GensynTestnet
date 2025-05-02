@@ -37,22 +37,22 @@ BIG_SWARM_CONTRACT="0x6947c6E196a48B77eFa9331EC1E3e45f3Ee5Fd58"
 # Install prerequisites (build-essential, gcc, g++, jq)
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   if command -v apt &>/dev/null; then
-    echo -e "${CYAN}${BOLD}[✓] Debian/Ubuntu detected. Installing build-essential, gcc, g++, jq...${NC}"
+    echo -e "${CYAN}${BOLD}[✓] Debian/Ubuntu detected. Installing build-essential, gcc, g++...${NC}"
     sudo apt update > /dev/null 2>&1
     sudo apt install -y build-essential gcc g++ jq > /dev/null 2>&1
   elif command -v yum &>/dev/null; then
-    echo -e "${CYAN}${BOLD}[✓] RHEL/CentOS detected. Installing Development Tools, jq...${NC}"
+    echo -e "${CYAN}${BOLD}[✓] RHEL/CentOS detected. Installing Development Tools...${NC}"
     sudo yum groupinstall -y "Development Tools" > /dev/null 2>&1
     sudo yum install -y gcc gcc-c++ jq > /dev/null 2>&1
   elif command -v pacman &>/dev/null; then
-    echo -e "${CYAN}${BOLD}[✓] Arch Linux detected. Installing base-devel, jq...${NC}"
+    echo -e "${CYAN}${BOLD}[✓] Arch Linux detected. Installing base-devel...${NC}"
     sudo pacman -Sy --noconfirm base-devel gcc jq > /dev/null 2>&1
   else
     echo -e "${RED}${BOLD}[✗] Linux detected but unsupported package manager.${NC}"
     exit 1
   fi
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-  echo -e "${CYAN}${BOLD}[✓] macOS detected. Installing Xcode Command Line Tools, jq...${NC}"
+  echo -e "${CYAN}${BOLD}[✓] macOS detected. Installing Xcode Command Line Tools...${NC}"
   xcode-select --install > /dev/null 2>&1 || true
   if ! command -v brew &>/dev/null; then
     echo -e "${CYAN}${BOLD}[✓] Installing Homebrew...${NC}"
@@ -268,12 +268,6 @@ cd modal-login
 
 echo -e "\n${CYAN}${BOLD}[✓] Installing dependencies with npm. This may take a few minutes...${NC}"
 npm install --legacy-peer-deps > /dev/null 2>&1
-
-# Run sed command before npm run dev
-echo -e "${CYAN}${BOLD}[✓] Updating max_steps in config file...${NC}"
-cd
-sed -i 's/max_steps: [0-9]\+/max_steps: 3/' rl-swarm/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml
-cd $ROOT/modal-login
 
 echo -e "\n${CYAN}${BOLD}[✓] Starting the development server...${NC}"
 if ! command -v ss &>/dev/null; then
@@ -687,7 +681,7 @@ if [ -z "$CONFIG_PATH" ]; then
             GAME="gsm8k"
         fi
         echo -e "${CYAN}${BOLD}[✓] Config file: ${BOLD}$CONFIG_PATH${NC}"
-        echo -e "${CYAN}${BOLD}[✓] Installing GPU-specific requirements, may take a few minutes...${NC}"
+        echo -e "${CYAN}${BOLD}[✓] Installing GPU-specific requirements...${NC}"
         pip install -r "$ROOT"/requirements-gpu.txt
         pip install flash-attn --no-build-isolation
     else
@@ -698,6 +692,12 @@ if [ -z "$CONFIG_PATH" ]; then
         echo -e "${CYAN}${BOLD}[✓] Config file: ${BOLD}$CONFIG_PATH${NC}"
     fi
 fi
+
+# Apply sed command for max_steps before Hugging Face prompt
+echo -e "${CYAN}${BOLD}[✓] Updating max_steps in config file...${NC}"
+cd
+sed -i 's/max_steps: [0-9]\+/max_steps: 3/' rl-swarm/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml
+cd $ROOT
 
 if [ -n "${HF_TOKEN}" ]; then
     HUGGINGFACE_ACCESS_TOKEN=${HF_TOKEN}
@@ -757,10 +757,11 @@ else
     echo -e "${YELLOW}${BOLD}[!] Could not locate hivemind.dht.node. Skipping timeout changes.${NC}"
 fi
 
-# Update max_steps in config file at the end
+# Apply sed command for max_steps at the end
 echo -e "${CYAN}${BOLD}[✓] Updating max_steps in config file...${NC}"
 cd
 sed -i 's/max_steps: [0-9]\+/max_steps: 3/' rl-swarm/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml
+cd $ROOT
 
 if [ -n "$ORG_ID" ]; then
     python -m hivemind_exp.gsm8k.train_single_gpu \
