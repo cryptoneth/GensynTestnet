@@ -266,8 +266,8 @@ sleep 2
 
 cd modal-login
 
-echo -e "\n${CYAN}${BOLD}[✓] Installing dependencies with npm. This may take a few minutes...${NC}"
-npm install --legacy-peer-deps > /dev/null 2>&1
+echo -e "\n${CYAN}${BOLD}[✓] Installing dependencies with npm. This may take a few minutes, depending on your internet speed...${NC}"
+npm install --legacy-peer-deps
 
 # Run sed command before npm run dev
 echo -e "${CYAN}${BOLD}[✓] Updating max_steps in config file...${NC}"
@@ -277,27 +277,27 @@ cd $ROOT/modal-login
 
 echo -e "\n${CYAN}${BOLD}[✓] Starting the development server...${NC}"
 if ! command -v ss &>/dev/null; then
-    echo -e "${YELLOW}[!] 'ss' not found. Attempting to install 'iproute2'...${NC}"
-    if command -v apt &>/dev/null; then
-        sudo apt update && sudo apt install -y iproute2
-    elif command -v yum &>/dev/null; then
-        sudo yum install -y iproute
-    elif command -v pacman &>/dev/null; then
-        sudo pacman -Sy iproute2
-    else
-        echo -e "${RED}[✗] Could not install 'ss'. Package manager not found.${NC}"
-        exit 1
-    fi
+  echo -e "${YELLOW}[!] 'ss' not found. Attempting to install 'iproute2'...${NC}"
+  if command -v apt &>/dev/null; then
+    sudo apt update && sudo apt install -y iproute2
+  elif command -v yum &>/dev/null; then
+    sudo yum install -y iproute
+  elif command -v pacman &>/dev/null; then
+    sudo pacman -Sy iproute2
+  else
+    echo -e "${RED}[✗] Could not install 'ss'. Package manager not found.${NC}"
+    exit 1
+  fi
 fi
 
 PORT_LINE=$(ss -ltnp | grep ":3000 ")
 if [ -n "$PORT_LINE" ]; then
-    PID=$(echo "$PORT_LINE" | grep -oP 'pid=\K[0-9]+')
-    if [ -n "$PID" ]; then
-        echo -e "${YELLOW}[!] Port 3000 is in use. Killing process: $PID${NC}"
-        kill -9 $PID
-        sleep 2
-    fi
+  PID=$(echo "$PORT_LINE" | grep -oP 'pid=\K[0-9]+')
+  if [ -n "$PID" ]; then
+    echo -e "${YELLOW}[!] Port 3000 is in use. Killing process: $PID${NC}"
+    kill -9 $PID
+    sleep 2
+  fi
 fi
 
 npm run dev > server.log 2>&1 &
@@ -396,344 +396,7 @@ if [ "$SKIP_TUNNEL" = false ]; then
         chmod +x cloudflared
         sudo mv cloudflared /usr/local/bin/
         if [ $? -ne 0 ]; then
-            echo -e "${RED}${BOLD}[✗] Failed to move cloudflared to /usr/local/bin/.${NC}"
-            return 1
-        fi
-        echo -e "${GREEN}${BOLD}[✓] Cloudflared installed successfully.${NC}"
-        return 0
-    }
-
-    install_ngrok() {
-        if command -v ngrok >/dev/null 2>&1; then
-            echo -e "${GREEN}${BOLD}[✓] ngrok is already installed.${NC}"
-            return 0
-        fi
-        echo -e "${YELLOW}${BOLD}[✓] Installing ngrok...${NC}"
-        NGROK_URL="https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-$OS-$NGROK_ARCH.tgz"
-        wget -q --show-progress "$NGROK_URL" -O ngrok.tgz
-        if [ $? -ne 0 ]; then
-            echo -e "${RED}${BOLD}[✗] Failed to download ngrok.${NC}"
-            return 1
-        fi
-        tar -xzf ngrok.tgz
-        if [ $? -ne 0 ]; then
-            echo -e "${RED}${BOLD}[✗] Failed to extract ngrok.${NC}"
-            rm ngrok.tgz
-            return 1
-        fi
-        sudo mv ngrok /usr/local/bin/
-        if [ $? -ne 0 ]; then
-            echo -e "${RED}${BOLD}[✗] Failed to move ngrok to /usr/local/bin/.${NC}"
-            rm ngrok.tgz
-            return 1
-        fi
-        rm ngrok.tgz
-        echo -e "${GREEN}${BOLD}[✓] ngrok installed successfully.${NC}"
-        return 0
-    }
-
-    try_localtunnel() {
-        echo -e "\n${CYAN}${BOLD}[✓] Trying localtunnel...${NC}"
-        if install_localtunnel; then
-            echo -e "\n${CYAN}${BOLD}[✓] Starting localtunnel on port $PORT...${NC}"
-            TUNNEL_TYPE="localtunnel"
-            lt --port $PORT > localtunnel_output.log 2>&1 &
-            TUNNEL_PID=$!
-            
-            sleep 5
-            URL=$(grep -o "https://[^ ]*" localtunnel_output.log | head -n1)
-            
-            if [ -n "$URL" ]; then
-                PASS=$(curl -s https://loca.lt/mytunnelpassword)
-                FORWARDING_URL="$URL"
-                echo -e "${GREEN}${BOLD}[✓] Success! Please visit: ${YELLOW}${BOLD}${URL}${GREEN}${BOLD} and enter password: ${YELLOW}${BOLD}${PASS}${GREEN}${BOLD} to log in with your email.${NC}"
-                return 0
-            else
-                echo -e "${RED}${BOLD}[✗] Failed to get localtunnel URL.${NC}"
-                kill $TUNNEL_PID 2>/dev/null || true
-            fi
-        fi
-        return 1
-    }
-
-    try_cloudflared() {
-        echo -e "\n${CYAN}${BOLD}[✓] Trying cloudflared...${NC}"
-        if install_cloudflared; then
-            echo -e "\n${CYAN}${BOLD}[✓] Starting cloudflared tunnel...${NC}"
-            TUNNEL_TYPE="cloudflared"
-            cloudflared tunnel --url http://localhost:$PORT > cloudflared_output.log 2>&1 &
-            TUNNEL_PID=$!
-            
-            counter=0
-            MAX_WAIT=10
-            while [ $counter -lt $MAX_WAIT ]; do
-                CLOUDFLARED_URL=$(grep -o 'https://[^ ]*\.trycloudflare.com' cloudflared_output.log | head -n1)
-                if [ -n "$CLOUDFLARED_URL" ]; then
-                    echo -e "${GREEN}${BOLD}[✓] Cloudflared tunnel started successfully.${NC}"
-                    echo -e "\n${CYAN}${BOLD}[✓] Checking if cloudflared URL is working...${NC}"
-                    if check_url "$CLOUDFLARED_URL"; then
-                        FORWARDING_URL="$CLOUDFLARED_URL"
-                        return 0
-                    else
-                        echo -e "${RED}${BOLD}[✗] Cloudflared URL is not accessible.${NC}"
-                        kill $TUNNEL_PID 2>/dev/null || true
-                        break
-                    fi
-                fi
-                sleep 1
-                counter=$((counter + 1))
-            done
-            kill $TUNNEL_PID 2>/dev/null || true
-        fi
-        return 1
-    }
-
-    get_ngrok_url_method1() {
-        local url=$(grep -o '"url":"https://[^"]*' ngrok_output.log 2>/dev/null | head -n1 | cut -d'"' -f4)
-        echo "$url"
-    }
-
-    get_ngrok_url_method2() {
-        local try_port
-        local url=""
-        for try_port in $(seq 4040 4045); do
-            local response=$(curl -s "http://localhost:$try_port/api/tunnels" 2>/dev/null)
-            if [ -n "$response" ]; then
-                url=$(echo "$response" | grep -o '"public_url":"https://[^"]*' | head -n1 | cut -d'"' -f4)
-                if [ -n "$url" ]; then
-                    break
-                fi
-            fi
-        done
-        echo "$url"
-    }
-
-    get_ngrok_url_method3() {
-        local url=$(grep -o "Forwarding.*https://[^ ]*" ngrok_output.log 2>/dev/null | grep -o "https://[^ ]*" | head -n1)
-        echo "$url"
-    }
-
-    try_ngrok() {
-        echo -e "\n${CYAN}${BOLD}[✓] Trying ngrok...${NC}"
-        if install_ngrok; then
-            TUNNEL_TYPE="ngrok"
-            while true; do
-                echo -e "\n${YELLOW}${BOLD}To get your authtoken:${NC}"
-                echo "1. Sign up or log in at https://dashboard.ngrok.com"
-                echo "2. Go to 'Your Authtoken' section: https://dashboard.ngrok.com/get-started/your-authtoken"
-                echo "3. Click on the eye icon to reveal your ngrok auth token"
-                echo "4. Copy that auth token and paste it in the prompt below"
-                echo -e "\n${BOLD}Please enter your ngrok authtoken:${NC}"
-                read -p "> " NGROK_TOKEN
-            
-                if [ -z "$NGROK_TOKEN" ]; then
-                    echo -e "${RED}${BOLD}[✗] No token provided. Please enter a valid token.${NC}"
-                    continue
-                fi
-                pkill -f ngrok || true
-                sleep 2
-            
-                ngrok authtoken "$NGROK_TOKEN" 2>/dev/null
-                if [ $? -eq 0 ]; then
-                    echo -e "${GREEN}${BOLD}[✓] Successfully authenticated ngrok!${NC}"
-                    break
-                else
-                    echo -e "${RED}[✗] Authentication failed. Please check your token and try again.${NC}"
-                fi
-            done
-
-            echo -e "\n${CYAN}${BOLD}[✓] Starting ngrok with method 1...${NC}"
-            ngrok http "$PORT" --log=stdout --log-format=json > ngrok_output.log 2>&1 &
-            TUNNEL_PID=$!
-            sleep 5
-            
-            NGROK_URL=$(get_ngrok_url_method1)
-            if [ -n "$NGROK_URL" ]; then
-                FORWARDING_URL="$NGROK_URL"
-                return 0
-            else
-                echo -e "${RED}${BOLD}[✗] Failed to get ngrok URL (method 1).${NC}"
-                kill $TUNNEL_PID 2>/dev/null || true
-            fi
-
-            echo -e "\n${CYAN}${BOLD}[✓] Starting ngrok with method 2...${NC}"
-            ngrok http "$PORT" > ngrok_output.log 2>&1 &
-            TUNNEL_PID=$!
-            sleep 5
-            
-            NGROK_URL=$(get_ngrok_url_method2)
-            if [ -n "$NGROK_URL" ]; then
-                FORWARDING_URL="$NGROK_URL"
-                return 0
-            else
-                echo -e "${RED}${BOLD}[✗] Failed to get ngrok URL (method 2).${NC}"
-                kill $TUNNEL_PID 2>/dev/null || true
-            fi
-
-            echo -e "\n${CYAN}${BOLD}[✓] Starting ngrok with method 3...${NC}"
-            ngrok http "$PORT" --log=stdout > ngrok_output.log 2>&1 &
-            TUNNEL_PID=$!
-            sleep 5
-            
-            NGROK_URL=$(get_ngrok_url_method3)
-            if [ -n "$NGROK_URL" ]; then
-                FORWARDING_URL="$NGROK_URL"
-                return 0
-            else
-                echo -e "${RED}${BOLD}[✗] Failed to get ngrok URL (method 3).${NC}"
-                kill $TUNNEL_PID 2>/dev/null || true
-            fi
-        fi
-        return 1
-    }
-
-    start_tunnel() {
-        if try_localtunnel; then
-            return 0
-        fi
-        
-        if try_cloudflared; then
-            return 0
-        fi
-        
-        if try_ngrok; then
-            return 0
-        fi
-        return 1
-    }
-
-    if ! start_tunnel; then
-        echo -e "\n${BLUE}${BOLD}[✓] Manual method instructions:${NC}"
-        echo "1. Open this same WSL/VPS or GPU server on another tab"
-        echo "2. Run: ngrok http $PORT"
-        echo "3. It will show a link like: https://xxxx.ngrok-free.app"
-        echo "4. Visit this link and login using your email (may take 30 sec to load)"
-        echo "5. Return to this tab to continue"
-    fi
-fi
-
-cd ..
-
-echo -e "\n${CYAN}${BOLD}[↻] Waiting for login process to complete...${NC}"
-while [ ! -f "modal-login/temp-data/userData.json" ] || [ ! -f "modal-login/temp-data/userApiKey.json" ]; do
-    sleep 3
-done
-
-echo -e "${GREEN}${BOLD}[✓] Success! userData.json and userApiKey.json created.${NC}"
-
-# Prompt for replacing JSON contents
-echo -e "\n${CYAN}${BOLD}[?] Do you want to replace the contents of userData.json and userApiKey.json? [y/N]${NC}"
-read -p "> " replace_json
-replace_json=${replace_json:-N}
-if [[ $replace_json =~ ^[Yy]$ ]]; then
-    echo -e "${CYAN}${BOLD}[✓] Enter new content for userData.json (press Ctrl+D when done):${NC}"
-    new_userdata=$(cat)
-    echo -e "${CYAN}${BOLD}[✓] Enter new content for userApiKey.json (press Ctrl+D when done):${NC}"
-    new_userapikey=$(cat)
-    echo "$new_userdata" > modal-login/temp-data/userData.json
-    echo "$new_userapikey" > modal-login/temp-data/userApiKey.json
-    echo -e "${GREEN}${BOLD}[✓] userData.json and userApiKey.json have been replaced.${NC}"
-fi
-
-rm -f modal-login/server.log modal-login/localtunnel_output.log modal-login/cloudflared_output.log modal-login/ngrok_output.log
-
-ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
-echo -e "\n${CYAN}${BOLD}[✓] ORG_ID set to: $ORG_ID${NC}"
-
-echo -e "${CYAN}${BOLD}[✓] Waiting for API key activation...${NC}"
-while true; do
-    STATUS=$(curl -s "http://localhost:3000/api/get-api-key-status?orgId=$ORG_ID")
-    if [[ "$STATUS" == "activated" ]]; then
-        echo -e "${GREEN}${BOLD}[✓] API key activated! Proceeding...${NC}"
-        break
-    else
-        echo "[↻] Waiting for API key activation..."
-        sleep 5
-    fi
-done
-
-ENV_FILE="$ROOT"/modal-login/.env
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "3s/.*/SMART_CONTRACT_ADDRESS=$SWARM_CONTRACT/" "$ENV_FILE"
-else
-    sed -i "3s/.*/SMART_CONTRACT_ADDRESS=$SWARM_CONTRACT/" "$ENV_FILE"
-fi
-
-echo -e "${CYAN}${BOLD}[✓] Setting up Python virtual environment...${NC}"
-python3 -m venv .venv && . .venv/bin/activate && \
-echo -e "${GREEN}${BOLD}[✓] Python virtual environment set up successfully.${NC}" || \
-echo -e "${RED}${BOLD}[✗] Failed to set up virtual environment.${NC}"
-
-if [ -z "$CONFIG_PATH" ]; then
-    if command -v nvidia-smi &> /dev/null || [ -d "/proc/driver/nvidia" ]; then
-        echo -e "${GREEN}${BOLD}[✓] GPU detected${NC}"
-        
-        case "$PARAM_B" in
-            32 | 72) 
-                CONFIG_PATH="$ROOT/hivemind_exp/configs/gpu/grpo-qwen-2.5-${PARAM_B}b-bnb-4bit-deepseek-r1.yaml"
-                ;;
-            0.5 | 1.5 | 7) 
-                CONFIG_PATH="$ROOT/hivemind_exp/configs/gpu/grpo-qwen-2.5-${PARAM_B}b-deepseek-r1.yaml"
-                ;;
-            *)  
-                echo ">>> Parameter size not recognized. Defaulting to 0.5b."
-                CONFIG_PATH="$ROOT/hivemind_exp/configs/gpu/grpo-qwen-2.5-0.5b-deepseek-r1.yaml"
-                ;;
-        esac
-        
-        if [ "$USE_BIG_SWARM" = true ]; then
-            GAME="dapo"
-        else
-            GAME="gsm8k"
-        fi
-        echo -e "${CYAN}${BOLD}[✓] Config file: ${BOLD}$CONFIG_PATH${NC}"
-        echo -e "${CYAN}${BOLD}[✓] Installing GPU-specific requirements...${NC}"
-        pip install -r "$ROOT"/requirements-gpu.txt
-        pip install flash-attn --no-build-isolation
-    else
-        echo -e "${YELLOW}${BOLD}[✓] No GPU detected, using CPU configuration${NC}"
-        pip install -r "$ROOT"/requirements-cpu.txt
-        CONFIG_PATH="$ROOT/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml"
-        GAME="gsm8k"
-        echo -e "${CYAN}${BOLD}[✓] Config file: ${BOLD}$CONFIG_PATH${NC}"
-    fi
-fi
-
-# Verify hivemind_exp installation
-if ! python3 -c "import hivemind_exp" 2>/dev/null; then
-    echo -e "${RED}${BOLD}[✗] hivemind_exp module not found. Please check requirements installation.${NC}"
-    echo -e "${YELLOW}${BOLD}[!] Ensure requirements-gpu.txt or requirements-cpu.txt includes hivemind_exp and dependencies.${NC}"
-    exit 1
-fi
-
-if [ -n "${HF_TOKEN}" ]; then
-    HUGGINGFACE_ACCESS_TOKEN=${HF_TOKEN}
-else
-    read -p "Would you like to push models you train in the RL swarm to the Hugging Face Hub? [y/N] " yn
-    yn=${yn:-N}
-    case $yn in
-        [Yy]* ) read -p "Enter your Hugging Face access token: " HUGGINGFACE_ACCESS_TOKEN;;
-        [Nn]* ) HUGGINGFACE_ACCESS_TOKEN="None";;
-        * ) echo -e "${YELLOW}>>> No answer given, no models will be pushed to Hugging Face Hub.${NC}" && HUGGINGFACE_ACCESS_TOKEN="None";;
-    esac
-fi
-
-echo -e "\n${GREEN}${BOLD}[✓] Good luck in the swarm! Training session starting...${NC}"
-
-# Apply sed commands for p2p timeout, skip if already applied
-P2P_DAEMON_FILE=$(python3 -c "import hivemind.p2p.p2p_daemon as m; print(m.__file__)" 2>/dev/null)
-DHT_NODE_FILE=$(python3 -c "import hivemind.dht.node as m; print(m.__file__)" 2>/dev/null)
-
-if [ -n "$P2P_DAEMON_FILE" ] && [ -f "$P2P_DAEMON_FILE" ]; then
-    if ! grep -q "bootstrap_timeout: float = 120" "$P2P_DAEMON_FILE"; then
-        if [ "$(uname)" = "Darwin" ]; then
-            sed -i '' -E -e 's/(startup_timeout: *float *= *)[0-9.]+/\1120/' \
-                -e '/startup_timeout: float = 120,/a\'$'\n''    bootstrap_timeout: float = 120,' \
-                -e '/anonymous_p2p = await cls\.create\(/a\'$'\n''        bootstrap_timeout=120,' \
-                "$P2P_DAEMON_FILE"
-        else
-            sed -i -E -e 's/(startup_timeout: *float *= *)[0-9.]+/\1120/' \
-                -e '/startup_timeout: float = 120,/a\    bootstrap_timeout: float = 120,' \
+            echo -e "${RED}${BOLD}[✗] FailedTINGS = 120/' \
                 -e '/anonymous_p2p = await cls\.create\(/a\        bootstrap_timeout=120,' \
                 "$P2P_DAEMON_FILE"
         fi
