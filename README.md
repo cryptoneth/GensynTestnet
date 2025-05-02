@@ -196,6 +196,22 @@ chmod +x gensyn_update.sh && ./gensyn_update.sh
 ```
 
 
+##Reset Your Node
+
+```bash
+
+screen -x gensyn 
+```
+
+```bash
+
+pkill -SIGKILL -f hivemind
+
+cd rl-swarm
+
+python3 -m venv .venv && . .venv/bin/activate &&  chmod +x ./run_rl_swarm.sh && ./run_rl_swarm.sh
+```
+
 #Gensyn
 
 
