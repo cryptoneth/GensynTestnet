@@ -13,8 +13,6 @@ mkdir -p "$BACKUP_DIR"
 
 # Backup specified files
 echo "Creating backup of configuration files..."
-cp rl-swarm/modal-login/temp-data/userData.json "$BACKUP_DIR/userData.json" 2>/dev/null || echo "Warning: userData.json not found"
-cp rl-swarm/modal-login/temp-data/userApiKey.json "$BACKUP_DIR/userApiKey.json" 2>/dev/null || echo "Warning: userApiKey.json not found"
 cp rl-swarm/swarm.pem "$BACKUP_DIR/swarm.pem" 2>/dev/null || echo "Warning: swarm.pem not found"
 
 # Remove the existing rl-swarm directory
@@ -37,9 +35,6 @@ source .venv/bin/activate
 
 # Restore backup files
 echo "Restoring backup files..."
-mkdir -p modal-login/temp-data
-cp "$BACKUP_DIR/userData.json" modal-login/temp-data/userData.json 2>/dev/null || echo "Warning: Could not restore userData.json"
-cp "$BACKUP_DIR/userApiKey.json" modal-login/temp-data/userApiKey.json 2>/dev/null || echo "Warning: Could not restore userApiKey.json"
 cp "$BACKUP_DIR/swarm.pem" . 2>/dev/null || echo "Warning: Could not restore swarm.pem"
 
 # Apply configuration changes
