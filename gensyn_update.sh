@@ -26,10 +26,6 @@ echo "Cloning repositories..."
 git clone https://github.com/gensyn-ai/rl-swarm/
 git clone https://github.com/cryptoneth/GensynTestnet
 
-# Move run_rl_swarm.sh to rl-swarm
-echo "Moving run_rl_swarm.sh to rl-swarm..."
-mv GensynTestnet/run_rl_swarm.sh rl-swarm/run_rl_swarm.sh
-
 # Change to the rl-swarm directory
 cd rl-swarm
 python3 -m venv .venv
@@ -42,17 +38,19 @@ cp "$BACKUP_DIR/userData.json" modal-login/temp-data/userData.json 2>/dev/null |
 cp "$BACKUP_DIR/userApiKey.json" modal-login/temp-data/userApiKey.json 2>/dev/null || echo "Warning: Could not restore userApiKey.json"
 cp "$BACKUP_DIR/swarm.pem" . 2>/dev/null || echo "Warning: Could not restore swarm.pem"
 
-# Apply configuration changes
-echo "Applying configuration changes..."
-sed -i 's/dht = hivemind\.DHT(start=True, .*)/dht = hivemind.DHT(start=True, ensure_bootstrap_success=False, **self._dht_kwargs(grpo_args))/' $HOME/rl-swarm/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
-cd
-sed -i 's/max_steps: [0-9]\+/max_steps: 3/' $HOME/rl-swarm/hivemind_exp/configs/mac/grpo-qwen-2.5-0.5b-deepseek-r1.yaml
+
+
+# Git Pull
 cl rl-swarm
 git reset --hard
 git pull
 git fetch
 git reset --hard origin/main
 cd rl-swarm
+
+# Move run_rl_swarm.sh to rl-swarm
+echo "Moving run_rl_swarm.sh to rl-swarm..."
+mv GensynTestnet/run_rl_swarm.sh rl-swarm/run_rl_swarm.sh
 
 # Create and activate a virtual environment, then run the script
 python3 -m venv .venv
