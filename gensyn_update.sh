@@ -46,7 +46,7 @@ git reset --hard
 git pull
 git fetch
 git reset --hard origin/main
-cd rl-swarm
+cd
 
 # Move run_rl_swarm.sh to rl-swarm
 echo "Moving run_rl_swarm.sh to rl-swarm..."
