@@ -54,6 +54,7 @@ mv GensynTestnet/run_rl_swarm.sh rl-swarm/run_rl_swarm.sh
 
 # Create and activate a virtual environment, then run the script
 cd rl-swarm
+pkill -SIGKILL -f hivemind
 python3 -m venv .venv
 source .venv/bin/activate
 chmod +x ./run_rl_swarm.sh
