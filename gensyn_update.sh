@@ -41,7 +41,7 @@ cp "$BACKUP_DIR/swarm.pem" . 2>/dev/null || echo "Warning: Could not restore swa
 
 
 # Git Pull
-cl rl-swarm
+cd rl-swarm
 git reset --hard
 git pull
 git fetch
